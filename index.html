@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Three.js: Navigation</title>
+    <title>TargetPractice</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link type="text/css" rel="stylesheet" href="style.css">
@@ -14,7 +14,24 @@
             "three": "../99_Lib/three.module.min.js",
             "three/addons/": "../99_Lib/jsm/"
         } }
-      </script>
+    </script>
+
+    <div id="hud-container">
+        <div id="time-hud" class="hud-panel">
+            <div style="font-size: 12px; text-transform: uppercase;">Time</div>
+            <div id="time-value" class="hud-value">60</div>
+        </div>
+        <div id="score-hud" class="hud-panel">
+            <div style="font-size: 12px; text-transform: uppercase;">Points</div>
+            <div id="score-value" class="hud-value">0</div>
+        </div>
+    </div>
+
+    <div id="message-box">
+        <h1>SPIEL VORBEI</h1>
+        <div id="final-score" style="font-size: 24px; margin: 20px 0;"></div>
+        <button class="restart-button" onclick="location.reload()">New Game</button>
+    </div>
 
     <script type="module" src="app.mjs"></script>
 </body>
