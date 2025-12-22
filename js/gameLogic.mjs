@@ -4,6 +4,14 @@ export let score = 0;
 export let timeLeft = 60; // 60 Sekunden Spielzeit
 export let isGameActive = true;
 
+export function resetGame(duration = 60) {
+    score = 0;
+    timeLeft = duration;
+    isGameActive = true;
+    updateScoreHUD(score);
+    updateTimeHUD(timeLeft);
+}
+
 export function addPoints(amount) {
     if (!isGameActive) return;
     score += amount;

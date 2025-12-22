@@ -1,13 +1,20 @@
 import * as THREE from '../99_Lib/three.module.min.js';
-import { processTimer } from './js/gameLogic.mjs';
+import { processTimer, addPoints, resetGame, isGameActive } from './js/gameLogic.mjs';
 import { initHUD } from './js/hudManager.mjs';
+import { spawnTargets, updateTargets, removeTarget, resetTargets, getTargets } from './js/targets.mjs';
+import { createRifle, shoot } from './js/rifle.mjs';
+import { initControls, updateControls } from './js/controls.mjs';
 
 const halfPI = Math.PI / 2;
 let lastTime = Date.now();
+const difficulty = 'medium';
+const targetCount = 8;
+const roundDurationSeconds = 60;
 
 window.onload = async function () {
     // Initialize HUD
     initHUD();
+    resetGame(roundDurationSeconds);
     //Szene
     const scene = new THREE.Scene();
     const world = new THREE.Group();
@@ -24,12 +31,11 @@ window.onload = async function () {
     camera.position.set(0, 0, 1);
     scene.add(camera);
 
-    //Objekt
-    const cube = new THREE.Mesh(
-        new THREE.BoxGeometry(0.1, 0.1, 0.1),
-        new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.7, metalness: 0.0, })
-    )
-    scene.add(cube);
+    //Rifle spawn (attached to camera so it stays in view)
+    const rifle = createRifle(camera);
+
+    //Targets
+    spawnTargets(scene, difficulty, targetCount);
 
     //Floor
     const width = 0.1;
@@ -46,19 +52,32 @@ window.onload = async function () {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     this.document.body.appendChild(renderer.domElement);
-    
+
+    initControls(camera, renderer.domElement, { onShoot: handleShoot });
+
     function render(){
         // Calculate delta time
         const currentTime = Date.now();
         const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
         lastTime = currentTime;
 
-        // Update timer
-        processTimer(deltaTime);
+        if (isGameActive) {
+            processTimer(deltaTime);
+            updateTargets(deltaTime, difficulty);
+        }
 
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+        updateControls(deltaTime);
+
         renderer.render(scene, camera);
     }
     renderer.setAnimationLoop(render);
+
+    function handleShoot() {
+        if (!isGameActive) return;
+        const hitTarget = shoot(scene, camera, rifle, getTargets());
+        if (hitTarget) {
+            removeTarget(hitTarget, scene);
+            addPoints(10);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-import { updateScoreHUD, updateTimeHUD, showEndScreen } from './hud_manager.mjs';
+import { updateScoreHUD, updateTimeHUD, showEndScreen } from './hudManager.mjs';
 
 let score = 0;
 let timeLeft = 60; 
