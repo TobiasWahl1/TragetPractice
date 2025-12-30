@@ -27,11 +27,13 @@ export function initControls(camera, domElement, { onShoot } = {}) {
 	state.pitch = camera.rotation.x;
 	state.defaultFov = camera.fov;
 
+    //Mouse Controls
 	domElement.addEventListener('mousedown', onMouseDown);
 	domElement.addEventListener('mouseup', onMouseUp);
 	domElement.addEventListener('mousemove', onMouseMove);
 	domElement.addEventListener('contextmenu', e => e.preventDefault());
 
+    //Keyboard Controls
 	window.addEventListener('keydown', onKeyDown);
 	window.addEventListener('keyup', onKeyUp);
 	document.addEventListener('pointerlockchange', onPointerLockChange);
@@ -47,6 +49,7 @@ export function updateControls(deltaTime) {
 	applyRotation();
 	applyMovement(deltaTime);
 }
+
 
 function onMouseDown(event) {
 	if (!domRef) return;
@@ -68,6 +71,7 @@ function onMouseUp(event) {
 	}
 }
 
+//Moving camera
 function onMouseMove(event) {
 	if (!isLocked()) return;
 	state.yaw -= event.movementX * state.sensitivity;
@@ -76,6 +80,7 @@ function onMouseMove(event) {
 	state.pitch = Math.max(-limit, Math.min(limit, state.pitch));
 }
 
+//Moving character
 function onKeyDown(event) {
 	switch (event.code) {
 		case 'KeyW': state.moveForward = true; break;
@@ -85,6 +90,7 @@ function onKeyDown(event) {
 	}
 }
 
+//Stop moving character
 function onKeyUp(event) {
 	switch (event.code) {
 		case 'KeyW': state.moveForward = false; break;

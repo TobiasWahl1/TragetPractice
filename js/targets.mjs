@@ -24,6 +24,8 @@ export function spawnTargets(scene, difficulty = 'easy', count = 8) {
 
 		const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection();
 		target.userData.velocity = initialDir.multiplyScalar(settings.speed);
+		target.userData.isHit = false;
+		target.userData.respawnTimer = 0;
 		scene.add(target);
 		targets.push(target);
 	}
@@ -34,6 +36,15 @@ export function updateTargets(deltaTime, difficulty = 'easy') {
 	const settings = difficultySettings[difficulty] || difficultySettings.easy;
 
 	for (const target of targets) {
+		// Handle respawn timer
+		if (target.userData.isHit) {
+			target.userData.respawnTimer -= deltaTime;
+			if (target.userData.respawnTimer <= 0) {
+				respawnTarget(target, settings);
+			}
+			continue;
+		}
+
 		const vel = target.userData.velocity;
 
 		if (settings.jitter > 0) {
@@ -57,6 +68,15 @@ export function updateTargets(deltaTime, difficulty = 'easy') {
 	}
 }
 
+export function hitTarget(target) {
+	if (target.userData.isHit) return false;
+	
+	target.userData.isHit = true;
+	target.userData.respawnTimer = 3.0; // 3 seconds
+	target.visible = false;
+	return true;
+}
+
 export function removeTarget(target, scene) {
 	const idx = targets.indexOf(target);
 	if (idx !== -1) {
@@ -77,7 +97,23 @@ export function resetTargets(scene) {
 }
 
 export function getTargets() {
-	return targets;
+	return targets.filter(t => !t.userData.isHit);
+}
+
+function respawnTarget(target, settings) {
+	target.userData.isHit = false;
+	target.visible = true;
+	
+	// Respawn at random position
+	target.position.set(
+		THREE.MathUtils.randFloatSpread(bounds.x),
+		THREE.MathUtils.randFloat(0.3, 1.2),
+		-THREE.MathUtils.randFloat(2.0, bounds.z)
+	);
+	
+	// Reset velocity
+	const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection();
+	target.userData.velocity = initialDir.multiplyScalar(settings.speed);
 }
 
 function createTargetMesh() {

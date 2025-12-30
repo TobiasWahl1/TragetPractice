@@ -1,7 +1,7 @@
 import * as THREE from '../99_Lib/three.module.min.js';
 import { processTimer, addPoints, resetGame, isGameActive } from './js/gameLogic.mjs';
 import { initHUD } from './js/hudManager.mjs';
-import { spawnTargets, updateTargets, removeTarget, resetTargets, getTargets } from './js/targets.mjs';
+import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from './js/targets.mjs';
 import { createRifle, shoot } from './js/rifle.mjs';
 import { initControls, updateControls } from './js/controls.mjs';
 
@@ -74,10 +74,11 @@ window.onload = async function () {
 
     function handleShoot() {
         if (!isGameActive) return;
-        const hitTarget = shoot(scene, camera, rifle, getTargets());
-        if (hitTarget) {
-            removeTarget(hitTarget, scene);
-            addPoints(10);
+        const hitTargetMesh = shoot(scene, camera, rifle, getTargets());
+        if (hitTargetMesh) {
+            if (hitTarget(hitTargetMesh)) {
+                addPoints(10);
+            }
         }
     }
 }
