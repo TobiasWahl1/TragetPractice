@@ -7,14 +7,18 @@ import { initControls, updateControls } from './js/controls.mjs';
 
 const halfPI = Math.PI / 2;
 let lastTime = Date.now();
-const difficulty = 'medium';
+let difficulty = 'medium';
 const targetCount = 8;
 const roundDurationSeconds = 60;
+let gameStarted = false;
 
 window.onload = async function () {
-    // Initialize HUD
+    // Show difficulty menu
+    const difficultyMenu = document.getElementById('difficulty-menu');
+    const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+    
+    // Initialize HUD (hidden until game starts)
     initHUD();
-    resetGame(roundDurationSeconds);
     //Szene
     const scene = new THREE.Scene();
     const world = new THREE.Group();
@@ -34,9 +38,6 @@ window.onload = async function () {
     //Rifle spawn (attached to camera so it stays in view)
     const rifle = createRifle(camera);
 
-    //Targets
-    spawnTargets(scene, difficulty, targetCount);
-
     //Floor
     const width = 0.1;
     const box = new THREE.BoxGeometry(10, width, 10, 10, 1, 10);
@@ -55,25 +56,42 @@ window.onload = async function () {
 
     initControls(camera, renderer.domElement, { onShoot: handleShoot });
 
+    // Wait for difficulty selection
+    difficultyButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            difficulty = btn.dataset.difficulty;
+            difficultyMenu.style.display = 'none';
+            startGame();
+        });
+    });
+
+    function startGame() {
+        gameStarted = true;
+        resetGame(roundDurationSeconds);
+        spawnTargets(scene, difficulty, targetCount);
+    }
+
     function render(){
         // Calculate delta time
         const currentTime = Date.now();
         const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
         lastTime = currentTime;
 
-        if (isGameActive) {
+        if (gameStarted && isGameActive) {
             processTimer(deltaTime);
             updateTargets(deltaTime, difficulty);
         }
 
-        updateControls(deltaTime);
+        if (gameStarted) {
+            updateControls(deltaTime);
+        }
 
         renderer.render(scene, camera);
     }
     renderer.setAnimationLoop(render);
 
     function handleShoot() {
-        if (!isGameActive) return;
+        if (!gameStarted || !isGameActive) return;
         const hitTargetMesh = shoot(scene, camera, rifle, getTargets());
         if (hitTargetMesh) {
             if (hitTarget(hitTargetMesh)) {
