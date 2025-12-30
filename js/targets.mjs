@@ -1,7 +1,12 @@
 import * as THREE from '../../99_Lib/three.module.min.js';
 
 const targets = [];
-const bounds = { x: 4.5, y: 1.5, z: 3.5 };
+// Target booth area constraints
+const bounds = { 
+	xMin: -3.5, xMax: 3.5,     // Left-right range
+	yMin: 0.2, yMax: 1.5,       // Up-down range
+	zMin: -8, zMax: -5          // Far end of floor (away from player)
+};
 
 const difficultySettings = {
 	easy: { speed: 0.8, jitter: 0, baseDir: new THREE.Vector3(1, 0, 0) },
@@ -17,9 +22,9 @@ export function spawnTargets(scene, difficulty = 'easy', count = 8) {
 	for (let i = 0; i < count; i++) {
 		const target = createTargetMesh();
 		target.position.set(
-			THREE.MathUtils.randFloatSpread(bounds.x),
-			THREE.MathUtils.randFloat(0.3, 1.2),
-			-THREE.MathUtils.randFloat(2.0, bounds.z)
+			THREE.MathUtils.randFloat(bounds.xMin, bounds.xMax),
+			THREE.MathUtils.randFloat(bounds.yMin, bounds.yMax),
+			THREE.MathUtils.randFloat(bounds.zMin, bounds.zMax)
 		);
 
 		const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection();
@@ -56,13 +61,28 @@ export function updateTargets(deltaTime, difficulty = 'easy') {
 
 		target.position.addScaledVector(vel, deltaTime);
 
-		if (Math.abs(target.position.x) > bounds.x) {
-			target.position.x = Math.sign(target.position.x) * bounds.x;
+		// Constrain to target booth bounds
+		if (target.position.x < bounds.xMin) {
+			target.position.x = bounds.xMin;
+			vel.x *= -1;
+		} else if (target.position.x > bounds.xMax) {
+			target.position.x = bounds.xMax;
 			vel.x *= -1;
 		}
 
-		if (Math.abs(target.position.z) > bounds.z) {
-			target.position.z = Math.sign(target.position.z) * bounds.z;
+		if (target.position.y < bounds.yMin) {
+			target.position.y = bounds.yMin;
+			vel.y *= -1;
+		} else if (target.position.y > bounds.yMax) {
+			target.position.y = bounds.yMax;
+			vel.y *= -1;
+		}
+
+		if (target.position.z < bounds.zMin) {
+			target.position.z = bounds.zMin;
+			vel.z *= -1;
+		} else if (target.position.z > bounds.zMax) {
+			target.position.z = bounds.zMax;
 			vel.z *= -1;
 		}
 	}
@@ -104,11 +124,11 @@ function respawnTarget(target, settings) {
 	target.userData.isHit = false;
 	target.visible = true;
 	
-	// Respawn at random position
+	// Respawn at random position in booth area
 	target.position.set(
-		THREE.MathUtils.randFloatSpread(bounds.x),
-		THREE.MathUtils.randFloat(0.3, 1.2),
-		-THREE.MathUtils.randFloat(2.0, bounds.z)
+		THREE.MathUtils.randFloat(bounds.xMin, bounds.xMax),
+		THREE.MathUtils.randFloat(bounds.yMin, bounds.yMax),
+		THREE.MathUtils.randFloat(bounds.zMin, bounds.zMax)
 	);
 	
 	// Reset velocity

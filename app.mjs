@@ -32,22 +32,30 @@ window.onload = async function () {
 
     //Kamera
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 1);
+    camera.position.set(0, 0, 1.5);
     scene.add(camera);
 
-    //Rifle spawn (attached to camera so it stays in view)
+    //Rifle spawn
     const rifle = createRifle(camera);
 
     //Floor
     const width = 0.1;
-    const box = new THREE.BoxGeometry(10, width, 10, 10, 1, 10);
+    const box = new THREE.BoxGeometry(10, width, 30, 10, 1, 10);
     const floor = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8, metalness: 0.2 }));
     floor.position.y = -1;
     floor.receiveShadow = true;
     floor.userData.physics = {mass: 0};
     floor.name = "floor";
     scene.add(floor);
-
+    
+    //Player Stand
+    const standGeometry = new THREE.BoxGeometry(10, 0.8, 0.3);
+    const stand = new THREE.Mesh(standGeometry, new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.9, metalness: 0.1 }));
+    stand.position.set(0, -0.6, 0.85);
+    stand.castShadow = true;
+    stand.receiveShadow = true;
+    scene.add(stand);
+    
     //Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -74,7 +82,7 @@ window.onload = async function () {
     function render(){
         // Calculate delta time
         const currentTime = Date.now();
-        const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+        const deltaTime = (currentTime - lastTime) / 1000;
         lastTime = currentTime;
 
         if (gameStarted && isGameActive) {
@@ -84,6 +92,14 @@ window.onload = async function () {
 
         if (gameStarted) {
             updateControls(deltaTime);
+            
+            // Keep player behind the stand - prevent moving forward past it
+            if (camera.position.z < 1.2) {
+                camera.position.z = 1.2;
+            }
+            // Keep player in bounds
+            camera.position.x = Math.max(-4.5, Math.min(4.5, camera.position.x));
+            camera.position.z = Math.max(1.2, camera.position.z);
         }
 
         renderer.render(scene, camera);
