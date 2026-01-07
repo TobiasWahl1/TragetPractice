@@ -19,6 +19,7 @@ export async function initWebXR(renderer) {
         const isSupported = await navigator.xr.isSessionSupported('immersive-vr');
         if (isSupported) {
             btn.addEventListener('click', () => onWebXRButtonClick(renderer));
+            btn.style.display = 'flex';
             return true;
         } else {
             console.warn('immersive-vr not supported');
@@ -39,7 +40,7 @@ async function onWebXRButtonClick(renderer) {
     if (xrSession) {
         await xrSession.end();
         xrSession = null;
-        btn.textContent = '🥽 Enter VR';
+        btn.textContent = 'Enter VR';
     } else {
         try {
             const session = await navigator.xr.requestSession('immersive-vr', {
@@ -59,7 +60,10 @@ async function onSessionStarted(session, renderer) {
     const gl = renderer.getContext('webgl2') || renderer.getContext('webgl');
     await gl.makeXRCompatible();
     
+    renderer.xr.enabled = true;
+    renderer.xr.setReferenceSpaceType('local-floor');
     xrRefSpace = await session.requestReferenceSpace('local-floor');
+    await renderer.xr.setSession(session);
     
     // Set up session event listeners
     session.addEventListener('end', onSessionEnded);

@@ -3,6 +3,8 @@ import * as THREE from '../../99_Lib/three.module.min.js';
 let cameraRef = null;
 let domRef = null;
 let onShootCb = null;
+let movementRoot = null;
+let xrSessionRef = null;
 
 const state = {
 	moveForward: false,
@@ -18,29 +20,28 @@ const state = {
 	sensitivity: 0.0025
 };
 
-export function initControls(camera, domElement, { onShoot } = {}) {
+export function initControls(camera, domElement, { onShoot, movementRoot: root } = {}) {
 	cameraRef = camera;
 	domRef = domElement;
 	onShootCb = onShoot;
+	movementRoot = root ?? null;
 
 	state.yaw = camera.rotation.y;
 	state.pitch = camera.rotation.x;
 	state.defaultFov = camera.fov;
 
-    //Mouse Controls
 	domElement.addEventListener('mousedown', onMouseDown);
 	domElement.addEventListener('mouseup', onMouseUp);
 	domElement.addEventListener('mousemove', onMouseMove);
 	domElement.addEventListener('contextmenu', e => e.preventDefault());
 
-    //Keyboard Controls
 	window.addEventListener('keydown', onKeyDown);
 	window.addEventListener('keyup', onKeyUp);
 	document.addEventListener('pointerlockchange', onPointerLockChange);
 }
 
-export function updateControls(deltaTime) {
-	if (!cameraRef) return;
+export function updateControls(deltaTime, { enableDesktop = true } = {}) {
+	if (!cameraRef || !enableDesktop) return;
 
 	const targetFov = state.aim ? state.aimFov : state.defaultFov;
 	cameraRef.fov += (targetFov - cameraRef.fov) * 0.15;
@@ -50,6 +51,75 @@ export function updateControls(deltaTime) {
 	applyMovement(deltaTime);
 }
 
+// ---- VR joystick locomotion & snap rotation ----
+const _worldUp = new THREE.Vector3(0, 1, 0);
+const _vrForward = new THREE.Vector3();
+const _vrRight = new THREE.Vector3();
+const _vrMove = new THREE.Vector3();
+
+function getAxes2D(source) {
+	if (!source.gamepad || !source.gamepad.axes || source.gamepad.axes.length < 2) return null;
+	const axes = source.gamepad.axes;
+	// Prefer last two axes if available (Quest often reports 4 axes), else first two
+	if (axes.length >= 4) {
+		return { x: axes[2], y: axes[3], raw: axes };
+	}
+	return { x: axes[0], y: axes[1], raw: axes };
+}
+
+export function updateVRControls(deltaTime, session, camera, rig, {
+	moveSpeed = 1.8,
+	deadZone = 0.15,
+	rotateSpeed = 2.0,
+	bounds = { xMin: -4.5, xMax: 4.5, zMin: 0.9, zMax: 6.0 }
+} = {}) {
+	if (!session || !camera || !rig) return;
+
+	for (const source of session.inputSources) {
+		if (!source.gamepad) continue;
+
+		// Left hand: locomotion
+		if (source.handedness === 'left') {
+			const axes = getAxes2D(source);
+			if (!axes) continue;
+
+			let { x: axisX, y: axisY } = axes;
+			const magnitude = Math.hypot(axisX, axisY);
+			if (magnitude >= deadZone) {
+				const normalized = Math.min(1, (magnitude - deadZone) / (1 - deadZone));
+				axisX = (axisX / magnitude) * normalized;
+				axisY = (axisY / magnitude) * normalized;
+
+				_vrForward.set(0, 0, -1).applyQuaternion(camera.quaternion);
+				_vrForward.y = 0;
+				if (_vrForward.lengthSq() === 0) continue;
+				_vrForward.normalize();
+
+				_vrRight.crossVectors(_vrForward, _worldUp).normalize();
+
+				_vrMove.set(0, 0, 0);
+				_vrMove.addScaledVector(_vrRight, axisX);
+				_vrMove.addScaledVector(_vrForward, -axisY);
+				if (_vrMove.lengthSq() > 1) _vrMove.normalize();
+
+				rig.position.addScaledVector(_vrMove, moveSpeed * deltaTime);
+			}
+		}
+
+		// Right hand: yaw rotation
+		if (source.handedness === 'right' && source.gamepad && source.gamepad.axes && source.gamepad.axes.length >= 2) {
+			const axes = source.gamepad.axes;
+			const rotateX = axes.length >= 4 ? axes[2] : axes[0];
+			if (Math.abs(rotateX) > deadZone) {
+				rig.rotation.y -= rotateX * rotateSpeed * deltaTime;
+			}
+		}
+	}
+
+	// Clamp bounds post movement
+	rig.position.x = THREE.MathUtils.clamp(rig.position.x, bounds.xMin, bounds.xMax);
+	rig.position.z = THREE.MathUtils.clamp(rig.position.z, bounds.zMin, bounds.zMax);
+}
 
 function onMouseDown(event) {
 	if (!domRef) return;
@@ -71,7 +141,6 @@ function onMouseUp(event) {
 	}
 }
 
-//Moving camera
 function onMouseMove(event) {
 	if (!isLocked()) return;
 	state.yaw -= event.movementX * state.sensitivity;
@@ -80,7 +149,6 @@ function onMouseMove(event) {
 	state.pitch = Math.max(-limit, Math.min(limit, state.pitch));
 }
 
-//Moving character
 function onKeyDown(event) {
 	switch (event.code) {
 		case 'KeyW': state.moveForward = true; break;
@@ -90,7 +158,6 @@ function onKeyDown(event) {
 	}
 }
 
-//Stop moving character
 function onKeyUp(event) {
 	switch (event.code) {
 		case 'KeyW': state.moveForward = false; break;
@@ -120,7 +187,11 @@ function applyMovement(deltaTime) {
 
 	if (move.lengthSq() > 0) {
 		move.normalize().multiplyScalar(state.speed * deltaTime);
-		cameraRef.position.add(move);
+		if (movementRoot) {
+			movementRoot.position.add(move);
+		} else {
+			cameraRef.position.add(move);
+		}
 	}
 }
 
