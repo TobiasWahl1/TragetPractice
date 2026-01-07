@@ -4,6 +4,7 @@ import { initHUD } from './js/hudManager.mjs';
 import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from './js/targets.mjs';
 import { createRifle, shoot } from './js/rifle.mjs';
 import { initControls, updateControls } from './js/controls.mjs';
+import { initWebXR } from './js/webxr.mjs';
 
 const halfPI = Math.PI / 2;
 let lastTime = Date.now();
@@ -63,6 +64,7 @@ window.onload = async function () {
     this.document.body.appendChild(renderer.domElement);
 
     initControls(camera, renderer.domElement, { onShoot: handleShoot });
+    initWebXR(renderer);
 
     // Wait for difficulty selection
     difficultyButtons.forEach(btn => {
@@ -93,7 +95,7 @@ window.onload = async function () {
         if (gameStarted) {
             updateControls(deltaTime);
             
-            // Keep player behind the stand - prevent moving forward past it
+            // Keep player behind the stand
             if (camera.position.z < 1.2) {
                 camera.position.z = 1.2;
             }
