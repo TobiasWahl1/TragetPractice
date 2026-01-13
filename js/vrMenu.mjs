@@ -10,6 +10,8 @@ let boards = {
 let highScore = 0;
 let buttons = [];
 let hoveredButton = null;
+let currentInfoSlide = 0;
+let infoSlideContent = null; // Will hold the text mesh for slide content
 
 export function createVRMenuBoard(scene) {
     if (menuGroup) return menuGroup;
@@ -57,13 +59,31 @@ export function createVRMenuBoard(scene) {
     boards.highScore.rotation.y = -Math.PI / 2; // Face toward player spawn
     menuGroup.add(boards.highScore);
 
-    // Board 4: Empty Board (left side)
+    // Board 4: Info Board with slides (left side)
     boards.extra = createBoardWithPosts(
-        'INFO',
-        [],
+        'HOW TO PLAY',
+        [
+            { name: '<', value: 'slide_prev', y: -0.45, isReadOnly: false },
+            { name: '>', value: 'slide_next', y: -0.45, isReadOnly: false }
+        ],
         -3, -0.2, 3
     );
     boards.extra.rotation.y = Math.PI / 2; // Face toward player spawn
+    
+    // Position navigation buttons at bottom corners
+    const prevButton = buttons[buttons.length - 2];
+    const nextButton = buttons[buttons.length - 1];
+    prevButton.mesh.position.x = -0.35;
+    prevButton.mesh.geometry = new THREE.PlaneGeometry(0.15, 0.15); // Smaller square buttons
+    nextButton.mesh.position.x = 0.35;
+    nextButton.mesh.geometry = new THREE.PlaneGeometry(0.15, 0.15); // Smaller square buttons
+    
+    // Create slide content display
+    infoSlideContent = createInfoSlideDisplay();
+    boards.extra.add(infoSlideContent);
+    updateInfoSlide(0); // Show first slide
+    
+    menuGroup.add(boards.extra);
     menuGroup.add(boards.extra);
 
     menuGroup.userData.isMenu = true;
@@ -133,6 +153,102 @@ function createBoardWithPosts(title, buttonConfigs, posX, posY, posZ) {
     });
 
     return boardGroup;
+}
+
+function createInfoSlideDisplay() {
+    // Create a text display for slide content
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const texture = new THREE.CanvasTexture(canvas);
+    
+    const material = new THREE.MeshBasicMaterial({ 
+        map: texture, 
+        transparent: true 
+    });
+    const geometry = new THREE.PlaneGeometry(0.9, 0.9);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, 0.1, 0.05);
+    
+    mesh.userData.canvas = canvas;
+    mesh.userData.texture = texture;
+    
+    return mesh;
+}
+
+function getSlideContent(slideIndex) {
+    const slides = [
+        {
+            title: 'CONTROLS',
+            lines: [
+                'Left Joystick:',
+                '  Move Forward/Back/Left/Right',
+                '',
+                'Right Joystick:',
+                '  Rotate Camera',
+                '',
+                'Right Trigger:',
+                '  Pick up Rifle / Shoot'
+            ]
+        },
+        {
+            title: 'GAME RULES',
+            lines: [
+                '1. Select Difficulty',
+                '   (Easy/Medium/Hard)',
+                '',
+                '2. Pick up the Rifle',
+                '',
+                '3. Point at START GAME',
+                '   and pull trigger',
+                '',
+                '4. Shoot targets to score!',
+                '   You have 60 seconds'
+            ]
+        }
+    ];
+    
+    return slides[slideIndex] || slides[0];
+}
+
+function updateInfoSlide(slideIndex) {
+    if (!infoSlideContent) return;
+    
+    const totalSlides = 2;
+    currentInfoSlide = ((slideIndex % totalSlides) + totalSlides) % totalSlides;
+    
+    const canvas = infoSlideContent.userData.canvas;
+    const ctx = canvas.getContext('2d');
+    const slide = getSlideContent(currentInfoSlide);
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw slide title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 42px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(slide.title, canvas.width / 2, 60);
+    
+    // Draw slide content
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '28px Arial';
+    ctx.textAlign = 'left';
+    
+    let yPos = 120;
+    slide.lines.forEach(line => {
+        ctx.fillText(line, 60, yPos);
+        yPos += 36;
+    });
+    
+    // Draw slide indicator
+    ctx.fillStyle = '#888888';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${currentInfoSlide + 1} / ${totalSlides}`, canvas.width / 2, canvas.height - 30);
+    
+    // Update texture
+    infoSlideContent.userData.texture.needsUpdate = true;
 }
 
 function createButton(label, value, yPos, isReadOnly = false) {
@@ -261,6 +377,14 @@ export function updateVRMenuRaycast(controller, clicked = false) {
 
     // If clicked, return the action value of the hovered button
     if (clicked && hoveredButton) {
+        // Handle slide navigation
+        if (hoveredButton.value === 'slide_prev') {
+            updateInfoSlide(currentInfoSlide - 1);
+            return null; // Don't pass to app.mjs
+        } else if (hoveredButton.value === 'slide_next') {
+            updateInfoSlide(currentInfoSlide + 1);
+            return null; // Don't pass to app.mjs
+        }
         return hoveredButton.value;
     }
 
