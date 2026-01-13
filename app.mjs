@@ -46,7 +46,7 @@ window.onload = async function () {
     const playerRig = new THREE.Group();
     playerRig.position.set(0, 0, 2.5); // Desktop start offset behind the stand
     playerRig.scale.setScalar(1);
-    scene.add(playerRig);
+    world.add(playerRig);
 
     //Kamera
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -64,7 +64,7 @@ window.onload = async function () {
     floor.receiveShadow = true;
     floor.userData.physics = {mass: 0};
     floor.name = "floor";
-    scene.add(floor);
+    world.add(floor);
     
     //Player Stand
     const standGeometry = new THREE.BoxGeometry(10, 0.8, 0.3);
@@ -72,7 +72,7 @@ window.onload = async function () {
     stand.position.set(0, -0.6, 0.85);
     stand.castShadow = true;
     stand.receiveShadow = true;
-    scene.add(stand);
+    world.add(stand);
     
     //Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
