@@ -90,12 +90,13 @@ export function updateVRControls(deltaTime, session, camera, rig, {
 				axisX = (axisX / magnitude) * normalized;
 				axisY = (axisY / magnitude) * normalized;
 
-				_vrForward.set(0, 0, -1).applyQuaternion(camera.quaternion);
-				_vrForward.y = 0;
-				if (_vrForward.lengthSq() === 0) continue;
-				_vrForward.normalize();
-
-				_vrRight.crossVectors(_vrForward, _worldUp).normalize();
+				// Use rig rotation (body direction) instead of camera (head direction)
+				const rigRotation = rig.rotation.y;
+				const cosR = Math.cos(rigRotation);
+				const sinR = Math.sin(rigRotation);
+				
+				_vrForward.set(-sinR, 0, -cosR).normalize();
+				_vrRight.set(cosR, 0, -sinR).normalize();
 
 				_vrMove.set(0, 0, 0);
 				_vrMove.addScaledVector(_vrRight, axisX);
