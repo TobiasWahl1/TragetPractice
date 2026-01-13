@@ -25,7 +25,7 @@ export function showEndScreen(finalScore) {
     }
 }
 
-// ---- VR HUD (Canvas Texture) ----
+// ---- VR HUD ----
 export function createVRHUD(camera) {
     // Create wider canvas for HUD text spread across top
     const canvas = document.createElement('canvas');
@@ -65,8 +65,6 @@ export function updateVRHUD(vrHUD, score, timeLeft) {
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // No full background - transparent except for text areas
     
     // Text styling
     ctx.fillStyle = '#FFFFFF';

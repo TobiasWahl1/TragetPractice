@@ -19,9 +19,7 @@ export function createVRMenuBoard(scene) {
     menuGroup = new THREE.Group();
     scene.add(menuGroup);
 
-    // Create 3 different boards positioned to the right, perpendicular to stand
-    // All boards positioned 90 degrees from stand, to the right side
-    // Board 1: Difficulty Selection (right, closer to stand)
+    // Board 1: Difficulty Selection (right)
     boards.difficulty = createBoardWithPosts(
         'DIFFICULTY',
         [
@@ -34,7 +32,7 @@ export function createVRMenuBoard(scene) {
     boards.difficulty.rotation.y = -Math.PI / 2; // Face toward player spawn
     menuGroup.add(boards.difficulty);
 
-    // Board 2: Game Control (right, middle position)
+    // Board 2: Game Control (middle)
     boards.gameControl = createBoardWithPosts(
         'GAME CONTROL',
         [
@@ -47,7 +45,7 @@ export function createVRMenuBoard(scene) {
     boards.gameControl.rotation.y = -Math.PI / 2; // Face toward player spawn
     menuGroup.add(boards.gameControl);
 
-    // Board 3: High Score (right, further from stand)
+    // Board 3: High Score (left)
     boards.highScore = createBoardWithPosts(
         'HIGH SCORE',
         [
@@ -59,7 +57,7 @@ export function createVRMenuBoard(scene) {
     boards.highScore.rotation.y = -Math.PI / 2; // Face toward player spawn
     menuGroup.add(boards.highScore);
 
-    // Board 4: Info Board with slides (left side)
+    // Board 4: Info Board with slides
     boards.extra = createBoardWithPosts(
         'HOW TO PLAY',
         [
@@ -94,7 +92,7 @@ function createBoardWithPosts(title, buttonConfigs, posX, posY, posZ) {
     const boardGroup = new THREE.Group();
     boardGroup.position.set(posX, posY, posZ);
 
-    // Two wooden posts (cylinders) - human height scale
+    // Two wooden posts
     const postGeometry = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8);
     const postMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x654321,
@@ -309,7 +307,7 @@ function updateButtonVisual(button, hovered) {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Background - selected (green), hovered (orange), or default (brown)
+    // Background
     if (button.isSelected) {
         ctx.fillStyle = hovered ? '#90C880' : '#6B8E5C'; // Green when selected
     } else {
@@ -317,7 +315,7 @@ function updateButtonVisual(button, hovered) {
     }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Border - thicker/brighter if hovered or selected
+    // Border
     if (button.isSelected) {
         ctx.strokeStyle = hovered ? '#90EE90' : '#76B868';
         ctx.lineWidth = 10;

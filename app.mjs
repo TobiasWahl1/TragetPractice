@@ -14,11 +14,11 @@ const roundDurationSeconds = 60;
 let gameStarted = false;
 
 window.onload = async function () {
-    // Show difficulty menu
+    // Show difficulty menu (Browser)
     const difficultyMenu = document.getElementById('difficulty-menu');
     const difficultyButtons = document.querySelectorAll('.difficulty-btn');
     
-    // Initialize HUD (hidden until game starts)
+    // Initialize HUD
     initHUD();
     
     // Start game function (shared by desktop and VR)
@@ -184,7 +184,7 @@ window.onload = async function () {
             updateVRMenuRaycast(controllerRight);
         }
 
-        // Enable VR movement always (so player can reach menu), desktop only when game started
+        // Enable VR movement
         if (renderer.xr.isPresenting) {
             // VR movement always enabled to navigate to menu
             updateVRControls(deltaTime, renderer.xr.getSession(), camera, playerRig, {
@@ -198,10 +198,6 @@ window.onload = async function () {
             updateControls(deltaTime, { enableDesktop: true });
             playerRig.position.x = THREE.MathUtils.clamp(playerRig.position.x, -4.5, 4.5);
             playerRig.position.z = THREE.MathUtils.clamp(playerRig.position.z, 0.95, 6.0);
-        }
-        
-        if (gameStarted && getIsGameActive()) {
-            // Bounds enforcement for VR during gameplay (already in updateVRControls, but good practice)
         }
 
         // Update VR HUD during gameplay

@@ -60,7 +60,7 @@ const _vrMove = new THREE.Vector3();
 function getAxes2D(source) {
 	if (!source.gamepad || !source.gamepad.axes || source.gamepad.axes.length < 2) return null;
 	const axes = source.gamepad.axes;
-	// Prefer last two axes if available (Quest often reports 4 axes), else first two
+	// Prefer last two axes if available
 	if (axes.length >= 4) {
 		return { x: axes[2], y: axes[3], raw: axes };
 	}
