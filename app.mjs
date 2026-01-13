@@ -1,11 +1,11 @@
 import * as THREE from '../99_Lib/three.module.min.js';
-import { processTimer, addPoints, resetGame, isGameActive, setGameEndCallback, getScore, getTimeLeft } from './js/gameLogic.mjs';
+import { processTimer, addPoints, resetGame, setGameEndCallback, getScore, getTimeLeft, getIsGameActive } from './js/gameLogic.mjs';
 import { initHUD, createVRHUD, updateVRHUD, removeVRHUD } from './js/hudManager.mjs';
 import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from './js/targets.mjs';
 import { createRifle, shoot, attachRifle } from './js/rifle.mjs';
 import { initControls, updateControls, updateVRControls } from './js/controls.mjs';
 import { initWebXR } from './js/webxr.mjs';
-import { createVRMenuBoard, updateVRMenuRaycast, resetMenuButtons, updateMenuState, removeVRMenuBoard } from './js/vrMenu.mjs';
+import { createVRMenuBoard, updateVRMenuRaycast, resetMenuButtons, updateMenuState, removeVRMenuBoard, setButtonSelected, clearDifficultySelection, updateScoreDisplays } from './js/vrMenu.mjs';
 
 let lastTime = Date.now();
 let difficulty = 'medium';
@@ -174,7 +174,7 @@ window.onload = async function () {
         const deltaTime = (currentTime - lastTime) / 1000;
         lastTime = currentTime;
 
-        if (gameStarted && isGameActive) {
+        if (gameStarted && getIsGameActive()) {
             processTimer(deltaTime);
             updateTargets(deltaTime, difficulty);
         }
@@ -200,13 +200,18 @@ window.onload = async function () {
             playerRig.position.z = THREE.MathUtils.clamp(playerRig.position.z, 0.95, 6.0);
         }
         
-        if (gameStarted && isGameActive) {
+        if (gameStarted && getIsGameActive()) {
             // Bounds enforcement for VR during gameplay (already in updateVRControls, but good practice)
         }
 
         // Update VR HUD during gameplay
         if (renderer.xr.isPresenting && vrHUD && gameStarted) {
             updateVRHUD(vrHUD, getScore(), getTimeLeft());
+        }
+
+        // Update VR score displays continuously
+        if (renderer.xr.isPresenting && vrMenuBoard && gameStarted) {
+            updateScoreDisplays(getScore());
         }
 
         renderer.render(scene, camera);
@@ -221,7 +226,7 @@ window.onload = async function () {
         }
         
         // Only allow shooting during active gameplay
-        if (!gameStarted || !isGameActive) return;
+        if (!gameStarted || !getIsGameActive()) return;
 
         const hitTargetMesh = shoot(scene, camera, rifle, getTargets());
         if (hitTargetMesh) {
@@ -255,7 +260,7 @@ window.onload = async function () {
         }
         
         // Only allow shooting during active gameplay
-        if (!gameStarted || !isGameActive) return;
+        if (!gameStarted || !getIsGameActive()) return;
         
         const hitTargetMesh = shoot(scene, camera, rifle, getTargets());
         if (hitTargetMesh && hitTarget(hitTargetMesh)) addPoints(10);
@@ -268,18 +273,40 @@ window.onload = async function () {
             case 'hard':
                 difficulty = action;
                 console.log('Difficulty set to:', difficulty);
+                // Clear previous selection and highlight the selected difficulty
+                clearDifficultySelection();
+                setButtonSelected(action, true);
+                // If game is already running, restart with new difficulty
+                if (gameStarted && getIsGameActive()) {
+                    gameStarted = true;
+                    resetGame(roundDurationSeconds);
+                    resetTargets();
+                    spawnTargets(scene, targetCount);
+                    updateMenuState('playing', getScore());
+                }
                 break;
             case 'start':
                 if (!gameStarted) {
+                    // Check if rifle is picked up before starting
+                    if (!rifle.userData.isHeld) {
+                        console.log('Please pick up the rifle first!');
+                        return;
+                    }
                     startGame();
-                    updateMenuState('playing'); // Hide difficulty buttons, show only EXIT VR
+                    updateMenuState('playing', 0); // Start with 0 score
                 }
                 break;
             case 'restart':
+                // Check if rifle is picked up before restarting
+                if (!rifle.userData.isHeld) {
+                    console.log('Please pick up the rifle first!');
+                    return;
+                }
+                gameStarted = true;
                 resetGame(roundDurationSeconds);
                 resetTargets();
                 spawnTargets(scene, targetCount);
-                updateMenuState('playing');
+                updateMenuState('playing', 0);
                 break;
             case 'exit':
                 // Exit VR session

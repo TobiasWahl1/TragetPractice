@@ -1,6 +1,13 @@
 import * as THREE from '../../99_Lib/three.module.min.js';
 
 let menuGroup = null;
+let boards = {
+    difficulty: null,
+    gameControl: null,
+    highScore: null,
+    extra: null
+};
+let highScore = 0;
 let buttons = [];
 let hoveredButton = null;
 
@@ -8,88 +15,138 @@ export function createVRMenuBoard(scene) {
     if (menuGroup) return menuGroup;
 
     menuGroup = new THREE.Group();
-    // Position as a world object (behind the stand, off to the side)
-    menuGroup.position.set(-3, 0.5, 1.5);
-    menuGroup.rotation.y = Math.PI / 6; // Angle it slightly toward player
     scene.add(menuGroup);
 
-    // Wooden post/stand
-    const postGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2, 8);
+    // Create 3 different boards positioned to the right, perpendicular to stand
+    // All boards positioned 90 degrees from stand, to the right side
+    // Board 1: Difficulty Selection (right, closer to stand)
+    boards.difficulty = createBoardWithPosts(
+        'DIFFICULTY',
+        [
+            { name: 'EASY', value: 'easy', y: 0.2 },
+            { name: 'MEDIUM', value: 'medium', y: -0.05 },
+            { name: 'HARD', value: 'hard', y: -0.3 }
+        ],
+        3, -0.2, 1.5
+    );
+    boards.difficulty.rotation.y = -Math.PI / 2; // Face toward player spawn
+    menuGroup.add(boards.difficulty);
+
+    // Board 2: Game Control (right, middle position)
+    boards.gameControl = createBoardWithPosts(
+        'GAME CONTROL',
+        [
+            { name: 'START GAME', value: 'start', y: 0.2 },
+            { name: 'RESTART', value: 'restart', y: -0.05 },
+            { name: 'EXIT VR', value: 'exit', y: -0.3 }
+        ],
+        3, -0.2, 3
+    );
+    boards.gameControl.rotation.y = -Math.PI / 2; // Face toward player spawn
+    menuGroup.add(boards.gameControl);
+
+    // Board 3: High Score (right, further from stand)
+    boards.highScore = createBoardWithPosts(
+        'HIGH SCORE',
+        [
+            { name: 'Best: 0', value: 'highscore_display', y: 0.15, isReadOnly: true },
+            { name: 'Current: 0', value: 'current_score_display', y: -0.15, isReadOnly: true }
+        ],
+        3, -0.2, 4.5
+    );
+    boards.highScore.rotation.y = -Math.PI / 2; // Face toward player spawn
+    menuGroup.add(boards.highScore);
+
+    // Board 4: Empty Board (left side)
+    boards.extra = createBoardWithPosts(
+        'INFO',
+        [],
+        -3, -0.2, 3
+    );
+    boards.extra.rotation.y = Math.PI / 2; // Face toward player spawn
+    menuGroup.add(boards.extra);
+
+    menuGroup.userData.isMenu = true;
+    return menuGroup;
+}
+
+function createBoardWithPosts(title, buttonConfigs, posX, posY, posZ) {
+    const boardGroup = new THREE.Group();
+    boardGroup.position.set(posX, posY, posZ);
+
+    // Two wooden posts (cylinders) - human height scale
+    const postGeometry = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8);
     const postMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x654321,
         roughness: 0.9,
         metalness: 0.1
     });
-    const post = new THREE.Mesh(postGeometry, postMaterial);
-    post.position.y = -1;
-    post.castShadow = true;
-    menuGroup.add(post);
+    
+    const post1 = new THREE.Mesh(postGeometry, postMaterial);
+    post1.position.set(-0.45, -0.5, 0);
+    post1.castShadow = true;
+    boardGroup.add(post1);
 
-    // Main wooden board
-    const boardGeometry = new THREE.BoxGeometry(2.2, 2.5, 0.12);
-    const boardMaterial = new THREE.MeshStandardMaterial({ 
+    const post2 = new THREE.Mesh(postGeometry, postMaterial);
+    post2.position.set(0.45, -0.5, 0);
+    post2.castShadow = true;
+    boardGroup.add(post2);
+
+    // Wooden sign in the middle
+    const signGeometry = new THREE.BoxGeometry(1.0, 1.2, 0.08);
+    const signMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x8B4513,
         roughness: 0.85,
         metalness: 0.1
     });
-    const board = new THREE.Mesh(boardGeometry, boardMaterial);
-    board.position.y = 0.2;
-    board.castShadow = true;
-    board.receiveShadow = true;
-    menuGroup.add(board);
+    const sign = new THREE.Mesh(signGeometry, signMaterial);
+    sign.position.y = 0.2;
+    sign.castShadow = true;
+    sign.receiveShadow = true;
+    boardGroup.add(sign);
 
-    // Decorative frame
-    const frameGeometry = new THREE.BoxGeometry(2.3, 2.6, 0.1);
+    // Decorative frame around sign
+    const frameGeometry = new THREE.BoxGeometry(1.05, 1.25, 0.06);
     const frameMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x654321,
         roughness: 0.95,
         metalness: 0.05
     });
     const frame = new THREE.Mesh(frameGeometry, frameMaterial);
-    frame.position.set(0, 0.2, -0.07);
-    menuGroup.add(frame);
+    frame.position.set(0, 0.2, -0.05);
+    boardGroup.add(frame);
 
-    // Title
-    const titleCanvas = createTextCanvas('SHOOTING GALLERY', 512, 100, 'bold 42px Arial');
+    // Title text
+    const titleCanvas = createTextCanvas(title, 512, 80, 'bold 32px Arial');
     const titleTexture = new THREE.CanvasTexture(titleCanvas);
     const titleMaterial = new THREE.MeshBasicMaterial({ map: titleTexture, transparent: true });
-    const titleGeometry = new THREE.PlaneGeometry(1.8, 0.28);
+    const titleGeometry = new THREE.PlaneGeometry(0.85, 0.18);
     const titleMesh = new THREE.Mesh(titleGeometry, titleMaterial);
-    titleMesh.position.set(0, 1.1, 0.07);
-    menuGroup.add(titleMesh);
+    titleMesh.position.set(0, 0.65, 0.05);
+    boardGroup.add(titleMesh);
 
-    // Create buttons
-    buttons = [];
-    const buttonConfigs = [
-        { name: 'EASY', value: 'easy', y: 0.55 },
-        { name: 'MEDIUM', value: 'medium', y: 0.15 },
-        { name: 'HARD', value: 'hard', y: -0.25 },
-        { name: 'START GAME', value: 'start', y: -0.75 },
-        { name: 'EXIT VR', value: 'exit', y: -1.15 }
-    ];
-
+    // Create buttons on this board
     buttonConfigs.forEach(config => {
-        const button = createButton(config.name, config.value, config.y);
-        menuGroup.add(button.mesh);
+        const button = createButton(config.name, config.value, config.y, config.isReadOnly || false);
+        boardGroup.add(button.mesh);
         buttons.push(button);
     });
 
-    menuGroup.userData.isMenu = true;
-    return menuGroup;
+    return boardGroup;
 }
 
-function createButton(label, value, yPos) {
-    const canvas = createTextCanvas(label, 512, 128, 'bold 48px Arial', '#FFD700', '#8B4513');
+function createButton(label, value, yPos, isReadOnly = false) {
+    const canvas = createTextCanvas(label, 512, 128, 'bold 36px Arial', '#FFD700', '#8B4513');
     const texture = new THREE.CanvasTexture(canvas);
     
-    const geometry = new THREE.PlaneGeometry(1.6, 0.28);
+    const geometry = new THREE.PlaneGeometry(0.8, 0.18);
     const material = new THREE.MeshBasicMaterial({ 
         map: texture,
         transparent: true,
         side: THREE.DoubleSide
     });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(0, yPos, 0.07);
+    mesh.position.set(0, yPos, 0.05);
     
     return {
         mesh,
@@ -97,7 +154,9 @@ function createButton(label, value, yPos) {
         texture,
         value,
         label,
-        isHovered: false
+        isHovered: false,
+        isSelected: false,
+        isReadOnly
     };
 }
 
@@ -134,18 +193,31 @@ function updateButtonVisual(button, hovered) {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Background - highlight if hovered
-    ctx.fillStyle = hovered ? '#D4A259' : '#8B4513';
+    // Background - selected (green), hovered (orange), or default (brown)
+    if (button.isSelected) {
+        ctx.fillStyle = hovered ? '#90C880' : '#6B8E5C'; // Green when selected
+    } else {
+        ctx.fillStyle = hovered ? '#D4A259' : '#8B4513'; // Orange hover or brown default
+    }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Border - thicker if hovered
-    ctx.strokeStyle = hovered ? '#FFD700' : '#654321';
-    ctx.lineWidth = hovered ? 10 : 6;
+    // Border - thicker/brighter if hovered or selected
+    if (button.isSelected) {
+        ctx.strokeStyle = hovered ? '#90EE90' : '#76B868';
+        ctx.lineWidth = 10;
+    } else {
+        ctx.strokeStyle = hovered ? '#FFD700' : '#654321';
+        ctx.lineWidth = hovered ? 10 : 6;
+    }
     ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
     
-    // Text - brighter if hovered
-    ctx.fillStyle = hovered ? '#FFF700' : '#FFD700';
-    ctx.font = 'bold 48px Arial';
+    // Text - brighter if hovered or selected
+    if (button.isSelected) {
+        ctx.fillStyle = '#FFFFFF'; // White text when selected
+    } else {
+        ctx.fillStyle = hovered ? '#FFF700' : '#FFD700';
+    }
+    ctx.font = 'bold 36px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(button.label, canvas.width / 2, canvas.height / 2);
@@ -199,47 +271,97 @@ export function getHoveredButton() {
     return hoveredButton;
 }
 
+export function setButtonSelected(value, selected = true) {
+    // Find button by value and set its selected state
+    const button = buttons.find(b => b.value === value);
+    if (button) {
+        button.isSelected = selected;
+        updateButtonVisual(button, button.isHovered);
+    }
+}
+
+export function clearDifficultySelection() {
+    // Clear selection from all difficulty buttons
+    buttons.forEach(btn => {
+        if (btn.value === 'easy' || btn.value === 'medium' || btn.value === 'hard') {
+            btn.isSelected = false;
+            updateButtonVisual(btn, btn.isHovered);
+        }
+    });
+}
+
 export function resetMenuButtons() {
     if (!menuGroup) return;
     buttons.forEach(btn => updateButtonVisual(btn, false));
     hoveredButton = null;
 }
 
-export function updateMenuState(state, finalScore = 0) {
+export function updateMenuState(state, currentScore = 0) {
     // State can be: 'menu', 'playing', or 'gameover'
     if (!menuGroup) return;
     
+    // Keep all boards visible at all times
+    boards.difficulty.visible = true;
+    boards.gameControl.visible = true;
+    boards.highScore.visible = true;
+    boards.extra.visible = true;
+    
+    // Update button visibility based on state
     buttons.forEach(btn => {
-        const mesh = btn.mesh;
-        
         if (state === 'menu') {
-            // Show all buttons: EASY, MEDIUM, HARD, START GAME, EXIT VR
-            mesh.visible = true;
+            btn.mesh.visible = true;
             if (btn.value === 'start') {
                 btn.label = 'START GAME';
                 updateButtonVisual(btn, btn.isHovered);
             }
         } else if (state === 'playing') {
-            // During gameplay: hide difficulty buttons, show only EXIT VR
-            if (btn.value === 'easy' || btn.value === 'medium' || btn.value === 'hard' || btn.value === 'start') {
-                mesh.visible = false;
-            } else {
-                mesh.visible = true;
-            }
-        } else if (state === 'gameover') {
-            // Game over: hide difficulty buttons, show RESTART and EXIT VR
-            if (btn.value === 'easy' || btn.value === 'medium' || btn.value === 'hard') {
-                mesh.visible = false;
-            } else if (btn.value === 'start') {
-                mesh.visible = true;
-                btn.label = `RESTART (Score: ${finalScore})`;
-                btn.value = 'restart';
+            // During gameplay: hide START GAME, keep everything else visible
+            if (btn.value === 'start') {
+                btn.mesh.visible = false;
+            } else if (btn.value === 'restart') {
+                btn.mesh.visible = true;
+                btn.label = 'RESTART';
                 updateButtonVisual(btn, btn.isHovered);
             } else {
-                mesh.visible = true;
+                btn.mesh.visible = true;
+            }
+        } else if (state === 'gameover') {
+            // Game over: hide START, show RESTART
+            if (btn.value === 'start') {
+                btn.mesh.visible = false;
+            } else if (btn.value === 'restart') {
+                btn.mesh.visible = true;
+                btn.label = 'RESTART';
+                updateButtonVisual(btn, btn.isHovered);
+            } else {
+                btn.mesh.visible = true;
+            }
+            
+            // Update highscore if current score is better
+            if (currentScore > highScore) {
+                highScore = currentScore;
             }
         }
     });
+    
+    // Update score displays
+    updateScoreDisplays(currentScore);
+}
+
+export function updateScoreDisplays(currentScore) {
+    // Update current score display
+    const currentScoreButton = buttons.find(b => b.value === 'current_score_display');
+    if (currentScoreButton) {
+        currentScoreButton.label = `Current: ${currentScore}`;
+        updateButtonVisual(currentScoreButton, false);
+    }
+    
+    // Update high score display
+    const highScoreButton = buttons.find(b => b.value === 'highscore_display');
+    if (highScoreButton) {
+        highScoreButton.label = `Best: ${highScore}`;
+        updateButtonVisual(highScoreButton, false);
+    }
 }
 
 export function removeVRMenuBoard(scene) {

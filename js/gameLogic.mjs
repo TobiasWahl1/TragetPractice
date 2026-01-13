@@ -14,6 +14,10 @@ export function getTimeLeft() {
     return timeLeft;
 }
 
+export function getIsGameActive() {
+    return isGameActive;
+}
+
 export function setGameEndCallback(callback) {
     onGameEndCallback = callback;
 }
