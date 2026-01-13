@@ -3,6 +3,20 @@ import { updateScoreHUD, updateTimeHUD, showEndScreen } from './hudManager.mjs';
 export let score = 0;
 export let timeLeft = 60; // 60 Sekunden Spielzeit
 export let isGameActive = true;
+let onGameEndCallback = null;
+
+// Getter functions to access current values
+export function getScore() {
+    return score;
+}
+
+export function getTimeLeft() {
+    return timeLeft;
+}
+
+export function setGameEndCallback(callback) {
+    onGameEndCallback = callback;
+}
 
 export function resetGame(duration = 60) {
     score = 0;
@@ -26,6 +40,11 @@ export function processTimer(deltaTime) {
         timeLeft = 0;
         isGameActive = false;
         showEndScreen(score);
+        
+        // Notify callback (e.g., to update VR menu)
+        if (onGameEndCallback) {
+            onGameEndCallback(score);
+        }
     }
     updateTimeHUD(timeLeft);
 }
