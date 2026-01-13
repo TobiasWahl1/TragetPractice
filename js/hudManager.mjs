@@ -27,9 +27,9 @@ export function showEndScreen(finalScore) {
 
 // ---- VR HUD (Canvas Texture) ----
 export function createVRHUD(camera) {
-    // Create canvas for drawing HUD text
+    // Create wider canvas for HUD text spread across top
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
+    canvas.width = 1024;
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
     
@@ -47,11 +47,11 @@ export function createVRHUD(camera) {
         depthTest: false,
         depthWrite: false
     });
-    const geometry = new THREE.PlaneGeometry(0.8, 0.2);
+    const geometry = new THREE.PlaneGeometry(1.6, 0.2);
     const hudMesh = new THREE.Mesh(geometry, material);
     
-    // Position in front and slightly below camera view
-    hudMesh.position.set(0, -0.35, -1.2);
+    // Position at top of view
+    hudMesh.position.set(0, 0.25, -1.2);
     hudMesh.renderOrder = 9999; // Render on top
     camera.add(hudMesh);
     
@@ -66,27 +66,24 @@ export function updateVRHUD(vrHUD, score, timeLeft) {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Background with slight transparency
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Border
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+    // No full background - transparent except for text areas
     
     // Text styling
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 48px Arial';
-    ctx.textAlign = 'left';
+    ctx.font = 'bold 56px Arial';
     ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
     
-    // Draw score
-    ctx.fillText(`Score: ${score}`, 30, canvas.height / 2);
+    // Draw time (top left)
+    ctx.textAlign = 'left';
+    ctx.fillText(`Time: ${Math.ceil(timeLeft)}s`, 80, canvas.height / 2);
     
-    // Draw time (right side)
+    // Draw score (top right)
     ctx.textAlign = 'right';
-    ctx.fillText(`Time: ${Math.ceil(timeLeft)}s`, canvas.width - 30, canvas.height / 2);
+    ctx.fillText(`Score: ${score}`, canvas.width - 80, canvas.height / 2);
     
     // Update texture
     texture.needsUpdate = true;
