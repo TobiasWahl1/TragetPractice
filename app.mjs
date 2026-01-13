@@ -1,18 +1,17 @@
 import * as THREE from '../99_Lib/three.module.min.js';
-import { processTimer, addPoints, resetGame, isGameActive } from './js/gameLogic.mjs';
-import { initHUD } from './js/hudManager.mjs';
+import { processTimer, addPoints, resetGame, isGameActive, score, timeLeft } from './js/gameLogic.mjs';
+import { initHUD, createVRHUD, updateVRHUD, removeVRHUD } from './js/hudManager.mjs';
 import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from './js/targets.mjs';
 import { createRifle, shoot, attachRifle } from './js/rifle.mjs';
 import { initControls, updateControls, updateVRControls } from './js/controls.mjs';
 import { initWebXR } from './js/webxr.mjs';
-
-// VR movement config handled in controls.mjs
 
 let lastTime = Date.now();
 let difficulty = 'medium';
 const targetCount = 8;
 const roundDurationSeconds = 60;
 let gameStarted = false;
+let vrHUD = null;
 
 window.onload = async function () {
     // Show difficulty menu
@@ -79,15 +78,20 @@ window.onload = async function () {
         playerRig.position.set(0, -1, 1.8); // Start further back in VR
         playerRig.scale.setScalar(0.85);   // Slightly reduce perceived user scale
         camera.position.set(0, 0, 0);      // Headset tracking provides the eye height
+        vrHUD = createVRHUD(camera);       // Create VR HUD
     });
 
     renderer.xr.addEventListener('sessionend', () => {
         playerRig.position.set(0, 0, 2.5);
         playerRig.scale.setScalar(1);
         camera.position.set(0, 0.3, 0);
+        if (vrHUD) {
+            removeVRHUD(vrHUD, camera);
+            vrHUD = null;
+        }
     });
 
-    // VR controllers (Meta Quest standard) - add to the player rig for proper positioning
+    // VR controllers - add to the player rig for proper positioning
     const controllerRight = renderer.xr.getController(1);
     const controllerRightGrip = renderer.xr.getControllerGrip(1);
     const controllerRay = buildRayHelper();
@@ -156,6 +160,10 @@ window.onload = async function () {
                     rotateSpeed: 2.0,
                     bounds: { xMin: -4.5, xMax: 4.5, zMin: 0.9, zMax: 6.0 }
                 });
+                // Update VR HUD
+                if (vrHUD) {
+                    updateVRHUD(vrHUD, score, timeLeft);
+                }
             }
         }
 
@@ -205,7 +213,8 @@ window.onload = async function () {
         const raycaster = new THREE.Raycaster(_tmpVecDesktop, dir, 0, 2.0);
         const hit = raycaster.intersectObject(rifle, false)[0];
         if (hit) {
-            attachRifle(rifle, camera);
+            // Attach with offset so rifle is visible in front of camera view
+            attachRifle(rifle, camera, new THREE.Vector3(0.2, -0.3, -0.6));
         }
     }
 
