@@ -25,7 +25,7 @@ window.onload = async function () {
     function startGame() {
         gameStarted = true;
         resetGame(roundDurationSeconds);
-        spawnTargets(scene, targetCount);
+        spawnTargets(scene, difficulty, targetCount);
         if (difficultyMenu) {
             difficultyMenu.style.display = 'none';
         }
@@ -277,7 +277,7 @@ window.onload = async function () {
                     gameStarted = true;
                     resetGame(roundDurationSeconds);
                     resetTargets();
-                    spawnTargets(scene, targetCount);
+                    spawnTargets(scene, difficulty, targetCount);
                     updateMenuState('playing', getScore());
                 }
                 break;
@@ -301,7 +301,7 @@ window.onload = async function () {
                 gameStarted = true;
                 resetGame(roundDurationSeconds);
                 resetTargets();
-                spawnTargets(scene, targetCount);
+                spawnTargets(scene, difficulty, targetCount);
                 updateMenuState('playing', 0);
                 break;
             case 'exit':
