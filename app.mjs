@@ -6,6 +6,7 @@ import { createRifle, shoot, attachRifle } from './js/rifle.mjs';
 import { initControls, updateControls, updateVRControls } from './js/controls.mjs';
 import { initWebXR } from './js/webxr.mjs';
 import { createVRMenuBoard, updateVRMenuRaycast, resetMenuButtons, updateMenuState, removeVRMenuBoard, setButtonSelected, clearDifficultySelection, updateScoreDisplays } from './js/vrMenu.mjs';
+import { initializeTextures, updateSkyDomePosition } from './js/textureManager.mjs';
 
 let lastTime = Date.now();
 let difficulty = 'medium';
@@ -65,6 +66,9 @@ window.onload = async function () {
     floor.userData.physics = {mass: 0};
     floor.name = "floor";
     world.add(floor);
+    
+    // Initialize textures (grass floor + sky dome) - works for both VR and Browser
+    initializeTextures(scene, floor, camera);
     
     //Player Stand
     const standGeometry = new THREE.BoxGeometry(10, 0.8, 0.3);
@@ -209,6 +213,9 @@ window.onload = async function () {
         if (renderer.xr.isPresenting && vrMenuBoard && gameStarted) {
             updateScoreDisplays(getScore());
         }
+        
+        // Update sky dome position to follow camera
+        updateSkyDomePosition();
 
         renderer.render(scene, camera);
     }

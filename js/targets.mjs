@@ -8,6 +8,18 @@ const bounds = {
 	zMin: -8, zMax: -5          // Far end of floor (away from player)
 };
 
+// Vibrant colors for targets
+const vibrantColors = [
+	0xff0000,  // Bright Red
+	0x00ff00,  // Bright Green
+	0x0099ff,  // Bright Blue
+	0xffff00,  // Bright Yellow
+	0xff00ff,  // Magenta
+	0x00ffff,  // Cyan
+	0xff6600,  // Orange
+	0xff0099   // Hot Pink
+];
+
 const difficultySettings = {
 	easy: { speed: 0.8, jitter: 0, baseDir: new THREE.Vector3(1, 0, 0) },
 	medium: { speed: 1.4, jitter: 0.8 },
@@ -138,7 +150,15 @@ function respawnTarget(target, settings) {
 
 function createTargetMesh() {
 	const geometry = new THREE.CylinderGeometry(0.12, 0.12, 0.15, 24);
-	const material = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.6, metalness: 0.2 });
+	// Choose a random vibrant color
+	const color = vibrantColors[Math.floor(Math.random() * vibrantColors.length)];
+	const material = new THREE.MeshStandardMaterial({ 
+		color: color, 
+		roughness: 0.5, 
+		metalness: 0.3,
+		emissive: color,
+		emissiveIntensity: 0.2
+	});
 	const mesh = new THREE.Mesh(geometry, material);
 	mesh.castShadow = true;
 	mesh.receiveShadow = true;
