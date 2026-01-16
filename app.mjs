@@ -127,7 +127,6 @@ window.onload = async function () {
         playerRig.scale.setScalar(0.85);   // Slightly reduce perceived user scale
         camera.position.set(0, 0, 0);      // Headset tracking provides the eye height
         
-        // Use existing VR menu board
         inVR = true;
         updateMenuState('menu'); // Ensure initial state when entering VR
         
