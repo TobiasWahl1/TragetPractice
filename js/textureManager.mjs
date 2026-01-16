@@ -24,9 +24,6 @@ function createHDRSkyDome(scene, camera) {
     );
 }
 
-/**
- * Apply grass texture to floor
- */
 export function applyGrassTexture(floorMesh) {
     console.log('Applying grass texture from local file...');
     

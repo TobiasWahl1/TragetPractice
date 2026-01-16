@@ -8,7 +8,7 @@ const bounds = {
 	zMin: -8, zMax: -5          // Far end of floor (away from player)
 };
 
-// Vibrant colors for targets
+// Colors for targets
 const vibrantColors = [
 	0xff0000,  // Bright Red
 	0x00ff00,  // Bright Green

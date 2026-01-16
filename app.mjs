@@ -85,8 +85,6 @@ window.onload = async function () {
         playerRig.scale.setScalar(1);
         camera.position.set(0, 0.3, 0);
         
-        // Keep VR menu board visible in browser
-        
         // Remove VR HUD
         if (vrHUD) {
             removeVRHUD(vrHUD, camera);
