@@ -5,8 +5,10 @@ import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from
 import { createRifle, shoot, attachRifle } from './js/rifle.mjs';
 import { initControls, updateControls, updateVRControls } from './js/controls.mjs';
 import { initWebXR } from './js/webxr.mjs';
-import { createVRMenuBoard, updateVRMenuRaycast, updateMenuState, setButtonSelected, clearDifficultySelection, updateScoreDisplays, updateMenuRaycastFromCamera } from './js/vrMenu.mjs';
+import { createVRMenuBoard, updateVRMenuRaycast, updateMenuState, setButtonSelected, clearDifficultySelection, updateScoreDisplays } from './js/vrMenu.mjs';
 import { initializeTextures, updateSkyDomePosition } from './js/textureManager.mjs';
+import { createSceneGraph } from './js/sceneSetup.mjs';
+import { initBrowserMenuControls } from './js/browserMenuControls.mjs';
 
 let lastTime = Date.now();
 let difficulty = 'medium';
@@ -15,9 +17,6 @@ const roundDurationSeconds = 60;
 let gameStarted = false;
 
 window.onload = async function () {
-    // Show difficulty menu (Browser)
-    const difficultyMenu = document.getElementById('difficulty-menu');
-    const difficultyButtons = document.querySelectorAll('.difficulty-btn');
     const crosshair = document.getElementById('crosshair');
     
     // Initialize HUD
@@ -28,56 +27,16 @@ window.onload = async function () {
         gameStarted = true;
         resetGame(roundDurationSeconds);
         spawnTargets(scene, difficulty, targetCount);
-        if (difficultyMenu) {
-            difficultyMenu.style.display = 'none';
-        }
     }
     
-    //Szene
-    const scene = new THREE.Scene();
-    const world = new THREE.Group();
-    scene.add(world);
-
-    //Lichter
-    scene.add(new THREE.HemisphereLight(0x808080, 0x606060));
-    const light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(0, 2, 0);
-    scene.add(light);
-
-    // Player rig manages camera offset for desktop and VR
-    const playerRig = new THREE.Group();
-    playerRig.position.set(0, 0, 2.5); // Desktop start offset behind the stand
-    playerRig.scale.setScalar(1);
-    world.add(playerRig);
-
-    //Kamera
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0.3, 0); // Local eye height relative to the rig
-    playerRig.add(camera);
+    // Szene
+    const { scene, world, playerRig, camera, floor } = createSceneGraph(window.innerWidth / window.innerHeight);
 
     //Rifle spawn (placed on stand)
     const rifle = createRifle(scene);
 
-    //Floor
-    const width = 0.1;
-    const box = new THREE.BoxGeometry(10, width, 30, 10, 1, 10);
-    const floor = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8, metalness: 0.2 }));
-    floor.position.y = -1;
-    floor.receiveShadow = true;
-    floor.userData.physics = {mass: 0};
-    floor.name = "floor";
-    world.add(floor);
-    
     // Initialize textures (grass floor + sky dome) - works for both VR and Browser
     initializeTextures(scene, floor, camera);
-    
-    //Player Stand
-    const standGeometry = new THREE.BoxGeometry(10, 0.8, 0.3);
-    const stand = new THREE.Mesh(standGeometry, new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.9, metalness: 0.1 }));
-    stand.position.set(0, -0.6, 0.85);
-    stand.castShadow = true;
-    stand.receiveShadow = true;
-    world.add(stand);
     
     //Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -99,27 +58,7 @@ window.onload = async function () {
     updateMenuState('menu'); // Show initial state: difficulty selection + START GAME
 
     // Desktop pointer interaction for boards (browser only)
-    const pointerNDC = new THREE.Vector2();
-    function updatePointerFromEvent(event) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        pointerNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        pointerNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    }
-
-    renderer.domElement.addEventListener('pointermove', (event) => {
-        if (renderer.xr.isPresenting) return;
-        updatePointerFromEvent(event);
-        updateMenuRaycastFromCamera(camera, pointerNDC, false);
-    });
-
-    renderer.domElement.addEventListener('click', (event) => {
-        if (renderer.xr.isPresenting) return;
-        updatePointerFromEvent(event);
-        const action = updateMenuRaycastFromCamera(camera, pointerNDC, true);
-        if (action) {
-            handleMenuAction(action);
-        }
-    });
+    initBrowserMenuControls(renderer, camera, handleMenuAction);
 
     // Adjust rig offsets when VR sessions start/end
     renderer.xr.addEventListener('sessionstart', () => {
@@ -186,14 +125,6 @@ window.onload = async function () {
     playerRig.add(controllerLeft);
     playerRig.add(controllerLeftGrip);
 
-    // Wait for difficulty selection
-    difficultyButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            difficulty = btn.dataset.difficulty;
-            startGame();
-        });
-    });
-
     function render(){
         // Calculate delta time
         const currentTime = Date.now();
@@ -219,8 +150,8 @@ window.onload = async function () {
                 rotateSpeed: 2.0,
                 bounds: { xMin: -4.5, xMax: 4.5, zMin: 0.9, zMax: 6.0 }
             });
-        } else if (gameStarted) {
-            // Desktop controls only when game started
+        } else {
+            // Desktop controls always enabled in browser
             updateControls(deltaTime, { enableDesktop: true });
             playerRig.position.x = THREE.MathUtils.clamp(playerRig.position.x, -4.5, 4.5);
             playerRig.position.z = THREE.MathUtils.clamp(playerRig.position.z, 0.95, 6.0);
