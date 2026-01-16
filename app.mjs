@@ -5,7 +5,7 @@ import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from
 import { createRifle, shoot, attachRifle } from './js/rifle.mjs';
 import { initControls, updateControls, updateVRControls } from './js/controls.mjs';
 import { initWebXR } from './js/webxr.mjs';
-import { createVRMenuBoard, updateVRMenuRaycast, updateMenuState, setButtonSelected, clearDifficultySelection, updateScoreDisplays } from './js/vrMenu.mjs';
+import { createVRMenuBoard, updateVRMenuRaycast, updateMenuState, setButtonSelected, clearDifficultySelection, updateScoreDisplays, updateMenuRaycastFromCamera } from './js/vrMenu.mjs';
 import { initializeTextures, updateSkyDomePosition } from './js/textureManager.mjs';
 
 let lastTime = Date.now();
@@ -18,6 +18,7 @@ window.onload = async function () {
     // Show difficulty menu (Browser)
     const difficultyMenu = document.getElementById('difficulty-menu');
     const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+    const crosshair = document.getElementById('crosshair');
     
     // Initialize HUD
     initHUD();
@@ -96,6 +97,29 @@ window.onload = async function () {
     // Create VR menu boards immediately so they are visible in browser too
     vrMenuBoard = createVRMenuBoard(scene);
     updateMenuState('menu'); // Show initial state: difficulty selection + START GAME
+
+    // Desktop pointer interaction for boards (browser only)
+    const pointerNDC = new THREE.Vector2();
+    function updatePointerFromEvent(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointerNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointerNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    renderer.domElement.addEventListener('pointermove', (event) => {
+        if (renderer.xr.isPresenting) return;
+        updatePointerFromEvent(event);
+        updateMenuRaycastFromCamera(camera, pointerNDC, false);
+    });
+
+    renderer.domElement.addEventListener('click', (event) => {
+        if (renderer.xr.isPresenting) return;
+        updatePointerFromEvent(event);
+        const action = updateMenuRaycastFromCamera(camera, pointerNDC, true);
+        if (action) {
+            handleMenuAction(action);
+        }
+    });
 
     // Adjust rig offsets when VR sessions start/end
     renderer.xr.addEventListener('sessionstart', () => {
@@ -208,13 +232,19 @@ window.onload = async function () {
             updateVRHUD(vrHUD, getScore(), getTimeLeft());
         }
 
-        // Update VR score displays continuously
-        if (renderer.xr.isPresenting && vrMenuBoard && gameStarted) {
+        // Update score displays continuously (VR + Browser)
+        if (vrMenuBoard && gameStarted) {
             updateScoreDisplays(getScore());
         }
         
         // Update sky dome position to follow camera
         updateSkyDomePosition();
+
+        // Browser crosshair: visible until rifle is picked up
+        if (crosshair) {
+            const shouldShowCrosshair = !renderer.xr.isPresenting && !rifle.userData.isHeld;
+            crosshair.style.display = shouldShowCrosshair ? 'block' : 'none';
+        }
 
         renderer.render(scene, camera);
     }

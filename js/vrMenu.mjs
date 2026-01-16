@@ -389,6 +389,45 @@ export function updateVRMenuRaycast(controller, clicked = false) {
     return null;
 }
 
+export function updateMenuRaycastFromCamera(camera, pointerNDC, clicked = false) {
+    if (!menuGroup || !menuGroup.visible) return null;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(pointerNDC, camera);
+
+    const buttonMeshes = buttons.map(b => b.mesh);
+    const intersects = raycaster.intersectObjects(buttonMeshes, false);
+
+    let newHovered = null;
+    if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        newHovered = buttons.find(b => b.mesh === hitMesh);
+    }
+
+    if (newHovered !== hoveredButton) {
+        if (hoveredButton) {
+            updateButtonVisual(hoveredButton, false);
+        }
+        if (newHovered) {
+            updateButtonVisual(newHovered, true);
+        }
+        hoveredButton = newHovered;
+    }
+
+    if (clicked && hoveredButton && !hoveredButton.isReadOnly) {
+        if (hoveredButton.value === 'slide_prev') {
+            updateInfoSlide(currentInfoSlide - 1);
+            return null;
+        } else if (hoveredButton.value === 'slide_next') {
+            updateInfoSlide(currentInfoSlide + 1);
+            return null;
+        }
+        return hoveredButton.value;
+    }
+
+    return null;
+}
+
 export function getHoveredButton() {
     return hoveredButton;
 }

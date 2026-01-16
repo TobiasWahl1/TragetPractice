@@ -157,3 +157,19 @@ box-shadow: 0 5px 20px rgba(100, 255, 218, 0.5);
 opacity: 0.5;
 cursor: not-allowed;
 }
+
+/* --- Crosshair (Browser only) --- */
+#crosshair {
+position: absolute;
+top: 50%;
+left: 50%;
+width: 8px;
+height: 8px;
+transform: translate(-50%, -50%);
+border-radius: 50%;
+background: #ffffff;
+box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+pointer-events: none;
+z-index: 15;
+display: none;
+}

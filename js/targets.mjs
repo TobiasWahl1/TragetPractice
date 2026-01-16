@@ -23,7 +23,7 @@ const vibrantColors = [
 const difficultySettings = {
 	easy: { speed: 0.8, jitter: 0, baseDir: new THREE.Vector3(1, 0, 0) },
 	medium: { speed: 1.4, jitter: 0.8 },
-	hard: { speed: 2.2, jitter: 1.6 }
+	hard: { speed: 2.8, jitter: 2.0, moveAllAxes: true }
 };
 
 export function spawnTargets(scene, difficulty = 'easy', count = 8) {
@@ -39,7 +39,7 @@ export function spawnTargets(scene, difficulty = 'easy', count = 8) {
 			THREE.MathUtils.randFloat(bounds.zMin, bounds.zMax)
 		);
 
-		const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection();
+		const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection(!!settings.moveAllAxes);
 		target.userData.velocity = initialDir.multiplyScalar(settings.speed);
 		target.userData.isHit = false;
 		target.userData.respawnTimer = 0;
@@ -67,6 +67,9 @@ export function updateTargets(deltaTime, difficulty = 'easy') {
 		if (settings.jitter > 0) {
 			vel.x += (Math.random() - 0.5) * settings.jitter * deltaTime;
 			vel.z += (Math.random() - 0.5) * settings.jitter * deltaTime;
+			if (settings.moveAllAxes) {
+				vel.y += (Math.random() - 0.5) * settings.jitter * deltaTime;
+			}
 			const maxSpeed = settings.speed * 1.4;
 			vel.clampLength(0, maxSpeed);
 		}
@@ -144,7 +147,7 @@ function respawnTarget(target, settings) {
 	);
 	
 	// Reset velocity
-	const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection();
+	const initialDir = settings.baseDir ? settings.baseDir.clone() : randomDirection(!!settings.moveAllAxes);
 	target.userData.velocity = initialDir.multiplyScalar(settings.speed);
 }
 
@@ -165,8 +168,12 @@ function createTargetMesh() {
 	return mesh;
 }
 
-function randomDirection() {
-	const dir = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5);
+function randomDirection(includeY = false) {
+	const dir = new THREE.Vector3(
+		Math.random() - 0.5,
+		includeY ? Math.random() - 0.5 : 0,
+		Math.random() - 0.5
+	);
 	dir.normalize();
 	return dir;
 }
