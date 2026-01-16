@@ -4,7 +4,6 @@ let cameraRef = null;
 let domRef = null;
 let onShootCb = null;
 let movementRoot = null;
-let xrSessionRef = null;
 
 const state = {
 	moveForward: false,
@@ -52,7 +51,6 @@ export function updateControls(deltaTime, { enableDesktop = true } = {}) {
 }
 
 // ---- VR joystick locomotion & snap rotation ----
-const _worldUp = new THREE.Vector3(0, 1, 0);
 const _vrForward = new THREE.Vector3();
 const _vrRight = new THREE.Vector3();
 const _vrMove = new THREE.Vector3();

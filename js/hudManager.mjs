@@ -2,8 +2,6 @@ import * as THREE from '../../99_Lib/three.module.min.js';
 
 const scoreElement = document.getElementById('score-value');
 const timeElement = document.getElementById('time-value');
-const messageBox = document.getElementById('message-box');
-const finalScoreDisplay = document.getElementById('final-score');
 
 export function initHUD() {
     updateScoreHUD(0);
@@ -16,13 +14,6 @@ export function updateScoreHUD(score) {
 
 export function updateTimeHUD(seconds) {
     if (timeElement) timeElement.textContent = Math.ceil(seconds);
-}
-
-export function showEndScreen(finalScore) {
-    if (messageBox) {
-        messageBox.style.display = 'block';
-        finalScoreDisplay.textContent = `Punkte: ${finalScore}`;
-    }
 }
 
 // ---- VR HUD ----

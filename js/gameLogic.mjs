@@ -1,4 +1,4 @@
-import { updateScoreHUD, updateTimeHUD, showEndScreen } from './hudManager.mjs';
+import { updateScoreHUD, updateTimeHUD } from './hudManager.mjs';
 
 export let score = 0;
 export let timeLeft = 60; // 60 Sekunden Spielzeit
@@ -43,8 +43,7 @@ export function processTimer(deltaTime) {
     if (timeLeft <= 0) {
         timeLeft = 0;
         isGameActive = false;
-        showEndScreen(score);
-        
+		
         // Notify callback (e.g., to update VR menu)
         if (onGameEndCallback) {
             onGameEndCallback(score);

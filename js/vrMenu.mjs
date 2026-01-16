@@ -82,7 +82,6 @@ export function createVRMenuBoard(scene) {
     updateInfoSlide(0); // Show first slide
     
     menuGroup.add(boards.extra);
-    menuGroup.add(boards.extra);
 
     menuGroup.userData.isMenu = true;
     return menuGroup;
@@ -428,10 +427,6 @@ export function updateMenuRaycastFromCamera(camera, pointerNDC, clicked = false)
     return null;
 }
 
-export function getHoveredButton() {
-    return hoveredButton;
-}
-
 export function setButtonSelected(value, selected = true) {
     // Find button by value and set its selected state
     const button = buttons.find(b => b.value === value);
@@ -449,12 +444,6 @@ export function clearDifficultySelection() {
             updateButtonVisual(btn, btn.isHovered);
         }
     });
-}
-
-export function resetMenuButtons() {
-    if (!menuGroup) return;
-    buttons.forEach(btn => updateButtonVisual(btn, false));
-    hoveredButton = null;
 }
 
 export function updateMenuState(state, currentScore = 0) {
