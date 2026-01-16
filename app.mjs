@@ -5,7 +5,7 @@ import { spawnTargets, updateTargets, hitTarget, resetTargets, getTargets } from
 import { createRifle, shoot, attachRifle } from './js/rifle.mjs';
 import { initControls, updateControls, updateVRControls } from './js/controls.mjs';
 import { initWebXR } from './js/webxr.mjs';
-import { createVRMenuBoard, updateVRMenuRaycast, resetMenuButtons, updateMenuState, removeVRMenuBoard, setButtonSelected, clearDifficultySelection, updateScoreDisplays } from './js/vrMenu.mjs';
+import { createVRMenuBoard, updateVRMenuRaycast, updateMenuState, setButtonSelected, clearDifficultySelection, updateScoreDisplays } from './js/vrMenu.mjs';
 import { initializeTextures, updateSkyDomePosition } from './js/textureManager.mjs';
 
 let lastTime = Date.now();
@@ -93,16 +93,19 @@ window.onload = async function () {
     let vrHUD = null;
     let inVR = false;
 
+    // Create VR menu boards immediately so they are visible in browser too
+    vrMenuBoard = createVRMenuBoard(scene);
+    updateMenuState('menu'); // Show initial state: difficulty selection + START GAME
+
     // Adjust rig offsets when VR sessions start/end
     renderer.xr.addEventListener('sessionstart', () => {
         playerRig.position.set(0, -1, 1.8); // Start further back in VR
         playerRig.scale.setScalar(0.85);   // Slightly reduce perceived user scale
         camera.position.set(0, 0, 0);      // Headset tracking provides the eye height
         
-        // Create VR menu board
+        // Use existing VR menu board
         inVR = true;
-        vrMenuBoard = createVRMenuBoard(scene);
-        updateMenuState('menu'); // Show initial state: difficulty selection + START GAME
+        updateMenuState('menu'); // Ensure initial state when entering VR
         
         // Create VR HUD
         vrHUD = createVRHUD(camera);
@@ -120,11 +123,7 @@ window.onload = async function () {
         playerRig.scale.setScalar(1);
         camera.position.set(0, 0.3, 0);
         
-        // Remove VR menu board
-        if (vrMenuBoard) {
-            removeVRMenuBoard(scene);
-            vrMenuBoard = null;
-        }
+        // Keep VR menu board visible in browser
         
         // Remove VR HUD
         if (vrHUD) {
