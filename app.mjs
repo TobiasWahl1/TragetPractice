@@ -199,7 +199,7 @@ window.onload = async function () {
     }
 
     function onVRSelectStart() {
-        if (!gameStarted || !isGameActive) return;
+        // Allow pickup anytime on trigger press
         if (!rifle.userData.isHeld) {
             tryPickUpRifleVR();
         }
