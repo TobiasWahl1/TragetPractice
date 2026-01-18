@@ -200,7 +200,7 @@ function getSlideContent(slideIndex) {
                 '   and pull trigger',
                 '',
                 '4. Shoot targets to score!',
-                '   You have 60 seconds'
+                '   You have 30 seconds'
             ]
         }
     ];

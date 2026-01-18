@@ -13,7 +13,7 @@ import { initBrowserMenuControls } from './js/browserMenuControls.mjs';
 let lastTime = Date.now();
 let difficulty = 'medium';
 const targetCount = 8;
-const roundDurationSeconds = 60;
+const roundDurationSeconds = 30;
 let gameStarted = false;
 
 window.onload = async function () {

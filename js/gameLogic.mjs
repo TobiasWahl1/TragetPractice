@@ -1,7 +1,7 @@
 import { updateScoreHUD, updateTimeHUD } from './hudManager.mjs';
 
 export let score = 0;
-export let timeLeft = 60; // 60 Sekunden Spielzeit
+export let timeLeft = 30; // 30 Sekunden Spielzeit
 export let isGameActive = true;
 let onGameEndCallback = null;
 
@@ -22,7 +22,7 @@ export function setGameEndCallback(callback) {
     onGameEndCallback = callback;
 }
 
-export function resetGame(duration = 60) {
+export function resetGame(duration = 30) {
     score = 0;
     timeLeft = duration;
     isGameActive = true;

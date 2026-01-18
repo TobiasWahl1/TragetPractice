@@ -5,7 +5,7 @@ const timeElement = document.getElementById('time-value');
 
 export function initHUD() {
     updateScoreHUD(0);
-    updateTimeHUD(60);
+    updateTimeHUD(30);
 }
 
 export function updateScoreHUD(score) {

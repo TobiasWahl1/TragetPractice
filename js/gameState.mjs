@@ -1,7 +1,7 @@
 import { updateScoreHUD, updateTimeHUD, showEndScreen } from './hudManager.mjs';
 
 let score = 0;
-let timeLeft = 60; 
+let timeLeft = 30; 
 let gameActive = true;
 
 export function addPoints(amount) {
